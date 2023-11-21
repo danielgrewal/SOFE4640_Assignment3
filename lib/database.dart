@@ -24,10 +24,6 @@ class FoodDatabase {
       onCreate: _createDB,
     );
 
-    // Insert 40 common food items with their approximate calories
-    // already handled in create table block below
-    // await _insertInitialFoodItems(db);
-
     return db;
   }
 
@@ -44,7 +40,7 @@ class FoodDatabase {
       CREATE TABLE meals(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         total_calories INTEGER,
-        date_time TEXT,
+        date TEXT,
         food_item_ids TEXT,
         FOREIGN KEY (food_item_ids) REFERENCES food_items(id)
       )
@@ -139,15 +135,41 @@ class FoodDatabase {
     return await db.insert('meals', meal);
   }
 
-  Future<void> insertMeal(int totalCalories, String dateTime, List<int> foodItemIds) async {
+  Future<void> insertMeal(
+      int totalCalories, String date, List<int> foodItemIds) async {
     final db = await database;
 
     final Map<String, dynamic> meal = {
       'total_calories': totalCalories,
-      'date_time': dateTime,
+      'date': date,
       'food_item_ids': foodItemIds.join(','),
     };
 
     await _insertMeal(meal);
+  }
+
+  Future<List<Map<String, dynamic>>> getMealRecords() async {
+    final db = await database;
+    return await db.query('meals');
+  }
+
+  Future<List<int>> getFoodItemsForMeal(int mealId) async {
+    final db = await database;
+    final result =
+        await db.query('meals', where: 'id = ?', whereArgs: [mealId]);
+    final foodItemIds =
+        (result.isNotEmpty) ? result.first['food_item_ids'] : '';
+    return (foodItemIds as String)
+        .split(',')
+        .map((id) => int.parse(id))
+        .toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getFoodItemsByIds(
+      List<int> foodItemIds) async {
+    final db = await database;
+    final inClause = foodItemIds.map((id) => '?').join(',');
+    return await db.rawQuery(
+        'SELECT * FROM food_items WHERE id IN ($inClause)', foodItemIds);
   }
 }
