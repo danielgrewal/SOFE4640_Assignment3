@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_calories_calc_app/meal.dart';
 import 'package:flutter_calories_calc_app/database.dart';
+import 'package:flutter_calories_calc_app/edit.dart';
 
 void main() {
   runApp(MyApp());
@@ -24,6 +25,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late List<Map<String, dynamic>> mealRecords = [];
+  DateTime? selectedFilterDate;
 
   @override
   void initState() {
@@ -44,6 +46,47 @@ class _MyHomePageState extends State<MyHomePage> {
     await _loadMealRecords();
   }
 
+  Future<void> _filterByDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedFilterDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedFilterDate = picked;
+      });
+    }
+  }
+
+  void _clearFilter() {
+    setState(() {
+      selectedFilterDate = null;
+    });
+  }
+
+  List<Map<String, dynamic>> getFilteredRecords() {
+    if (selectedFilterDate == null) {
+      return mealRecords;
+    } else {
+      return mealRecords
+          .where((record) =>
+              DateTime.parse(record['date'].toString())
+                  .isAtSameMomentAs(selectedFilterDate!) ||
+              DateTime.parse(record['date'].toString()).isAfter(DateTime(
+                      selectedFilterDate!.year,
+                      selectedFilterDate!.month,
+                      selectedFilterDate!.day)) &&
+                  DateTime.parse(record['date'].toString()).isBefore(DateTime(
+                      selectedFilterDate!.year,
+                      selectedFilterDate!.month,
+                      selectedFilterDate!.day + 1)))
+          .toList();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,19 +95,25 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: <Widget>[
-          Center(
-            child: ElevatedButton(
-              onPressed: () async {
-                // Navigate to the MealScreen when the button is pressed
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => MealScreen()),
-                );
-                // Refresh meal records after returning from MealScreen
-                await _refresh();
-              },
-              child: Text('Create New Meal Record'),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              ElevatedButton(
+                onPressed: _filterByDate,
+                child: Text('Filter by Date'),
+              ),
+              SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: _clearFilter,
+                child: Text('Clear Filter'),
+              ),
+              SizedBox(width: 10),
+              Text(
+                selectedFilterDate == null
+                    ? 'No Filter'
+                    : 'Filter Date: ${DateFormat('yyyy-MM-dd').format(selectedFilterDate!)}',
+              ),
+            ],
           ),
           SizedBox(height: 20),
           Text(
@@ -82,8 +131,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     DataColumn(label: Text('Date')),
                     DataColumn(label: Text('Food Items')),
                     DataColumn(label: Text('Total Calories')),
+                    DataColumn(label: Text('Edit')),  // New column for the "Edit" button
                   ],
-                  rows: mealRecords.map<DataRow>((record) {
+                  rows: getFilteredRecords().map<DataRow>((record) {
                     return DataRow(
                       cells: [
                         DataCell(
@@ -110,12 +160,41 @@ class _MyHomePageState extends State<MyHomePage> {
                         DataCell(
                           Text(record['total_calories'].toString()),
                         ),
+                        DataCell(
+                          ElevatedButton(
+                            onPressed: () async {
+                              // Navigate to the EditScreen when the "Edit" button is pressed
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditScreen(mealRecord: record),
+                                ),
+                              );
+                              // Refresh meal records after returning from EditScreen
+                              await _refresh();
+                            },
+                            child: Text('Edit'),
+                          ),
+                        ),
                       ],
                     );
                   }).toList(),
                 ),
               ),
             ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () async {
+              // Navigate to the MealScreen when the button is pressed
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MealScreen()),
+              );
+              // Refresh meal records after returning from MealScreen
+              await _refresh();
+            },
+            child: Text('Add A New Meal'),
           ),
         ],
       ),
