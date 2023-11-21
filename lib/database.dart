@@ -172,4 +172,12 @@ class FoodDatabase {
     return await db.rawQuery(
         'SELECT * FROM food_items WHERE id IN ($inClause)', foodItemIds);
   }
+
+  Future<Map<String, dynamic>> getMealRecordById(int mealId) async {
+    final db = await database;
+    final result =
+        await db.query('meals', where: 'id = ?', whereArgs: [mealId]);
+
+    return result.isNotEmpty ? result.first : {};
+  }
 }

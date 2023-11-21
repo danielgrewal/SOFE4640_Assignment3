@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_calories_calc_app/database.dart';
 
 class EditScreen extends StatefulWidget {
-  final Map<String, dynamic> mealRecord;
+  final int mealRecordId; // Change the type to int
 
-  EditScreen({required this.mealRecord});
+  EditScreen({required this.mealRecordId});
 
   @override
   _EditScreenState createState() => _EditScreenState();
@@ -18,16 +18,35 @@ class _EditScreenState extends State<EditScreen> {
   void initState() {
     super.initState();
 
-    // Initialize controllers with current values
-    final foodItems = widget.mealRecord['foodItems'];
-    _foodItemsController = TextEditingController(
-      text: foodItems != null ? foodItems.join(', ') : '',
-    );
+    // Initialize controllers with empty values
+    _foodItemsController = TextEditingController();
+    _totalCaloriesController = TextEditingController();
 
-    _totalCaloriesController = TextEditingController(
-      text: widget.mealRecord['total_calories'].toString(),
-    );
+    // Load meal record data
+    _loadMealRecord();
   }
+
+  Future<void> _loadMealRecord() async {
+    final database = FoodDatabase.instance;
+    final Map<String, dynamic> record =
+    await database.getMealRecordById(widget.mealRecordId);
+
+    // Use the retrieved record to set initial values for controllers
+    setState(() {
+      _totalCaloriesController.text = record['total_calories'].toString();
+    });
+
+    // Get the food items for the meal record
+    final List<int> foodItemIds = await database.getFoodItemsForMeal(widget.mealRecordId);
+    final List<Map<String, dynamic>> foodItems =
+    await database.getFoodItemsByIds(foodItemIds);
+
+    // Join the food items into a comma-separated string and update the controller
+    setState(() {
+      _foodItemsController.text = foodItems.map((item) => item['name']).join(', ');
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -41,9 +60,7 @@ class _EditScreenState extends State<EditScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              'Edit Meal Entry for Date: ${DateFormat('yyyy-MM-dd').format(
-                DateTime.parse(widget.mealRecord['date'].toString()),
-              )}',
+              'Edit Meal Entry',
               style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 20),
@@ -74,13 +91,12 @@ class _EditScreenState extends State<EditScreen> {
   void _saveChanges() {
     // Retrieve the edited values from controllers
     final List<String> foodItems =
-        _foodItemsController.text.split(',').map((e) => e.trim()).toList();
+    _foodItemsController.text.split(',').map((e) => e.trim()).toList();
     final int totalCalories = int.tryParse(_totalCaloriesController.text) ?? 0;
 
     // Update the meal record with edited values
     final Map<String, dynamic> updatedRecord = {
-      'id': widget.mealRecord['id'],
-      'date': widget.mealRecord['date'],
+      'id': widget.mealRecordId, // Use the received 'id'
       'foodItems': foodItems,
       'total_calories': totalCalories,
     };

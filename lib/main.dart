@@ -131,7 +131,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     DataColumn(label: Text('Date')),
                     DataColumn(label: Text('Food Items')),
                     DataColumn(label: Text('Total Calories')),
-                    DataColumn(label: Text('Edit')),  // New column for the "Edit" button
+                    DataColumn(
+                        label:
+                            Text('Edit')), // New column for the "Edit" button
                   ],
                   rows: getFilteredRecords().map<DataRow>((record) {
                     return DataRow(
@@ -167,7 +169,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => EditScreen(mealRecord: record),
+                                  builder: (context) =>
+                                      EditScreen(mealRecordId: record['id']),
                                 ),
                               );
                               // Refresh meal records after returning from EditScreen

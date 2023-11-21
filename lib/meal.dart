@@ -146,8 +146,6 @@ class _MealScreenState extends State<MealScreen> {
     Navigator.pop(context);
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
