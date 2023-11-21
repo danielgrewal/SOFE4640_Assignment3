@@ -25,7 +25,8 @@ class FoodDatabase {
     );
 
     // Insert 40 common food items with their approximate calories
-    await _insertInitialFoodItems(db);
+    // already handled in create table block below
+    // await _insertInitialFoodItems(db);
 
     return db;
   }
@@ -48,6 +49,9 @@ class FoodDatabase {
         FOREIGN KEY (food_item_ids) REFERENCES food_items(id)
       )
     ''');
+
+    // Insert initial food items after creating the tables
+    await _insertInitialFoodItems(db);
   }
 
   Future<void> _insertInitialFoodItems(Database db) async {
@@ -107,15 +111,43 @@ class FoodDatabase {
   Future<void> insertFoodItem(String name, int calories) async {
     final db = await database;
 
-    await db.insert(
+    // Check if a food item with the same name already exists
+    final existingItems = await db.query(
       'food_items',
-      {
-        'name': name,
-        'calories': calories,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      where: 'name = ?',
+      whereArgs: [name],
     );
+
+    if (existingItems.isNotEmpty) {
+      // Handle the case where the food item already exists (e.g., show an error message)
+      print('Food item with the name "$name" already exists.');
+    } else {
+      // Insert the new food item if it doesn't already exist
+      await db.insert(
+        'food_items',
+        {
+          'name': name,
+          'calories': calories,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
   }
 
-// Add more methods for interacting with the database as needed
+  Future<int> _insertMeal(Map<String, dynamic> meal) async {
+    final db = await database;
+    return await db.insert('meals', meal);
+  }
+
+  Future<void> insertMeal(int totalCalories, String dateTime, List<int> foodItemIds) async {
+    final db = await database;
+
+    final Map<String, dynamic> meal = {
+      'total_calories': totalCalories,
+      'date_time': dateTime,
+      'food_item_ids': foodItemIds.join(','),
+    };
+
+    await _insertMeal(meal);
+  }
 }
