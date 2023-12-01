@@ -37,7 +37,7 @@ class FoodDatabase {
     ''');
 
     await db.execute('''
-      CREATE TABLE meals(
+      CREATE TABLE entries(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         total_calories INTEGER,
         date TEXT,
@@ -130,33 +130,38 @@ class FoodDatabase {
     }
   }
 
-  Future<int> _insertMeal(Map<String, dynamic> meal) async {
+  Future<int> _insertEntry(Map<String, dynamic> entry) async {
     final db = await database;
-    return await db.insert('meals', meal);
+    return await db.insert('entries', entry);
   }
 
-  Future<void> insertMeal(
+  Future<void> insertEntry(
       int totalCalories, String date, List<int> foodItemIds) async {
     final db = await database;
 
-    final Map<String, dynamic> meal = {
+    final Map<String, dynamic> entry = {
       'total_calories': totalCalories,
       'date': date,
       'food_item_ids': foodItemIds.join(','),
     };
 
-    await _insertMeal(meal);
+    await _insertEntry(entry);
   }
 
-  Future<List<Map<String, dynamic>>> getMealRecords() async {
+  Future<void> deleteEntry(int entryId) async {
     final db = await database;
-    return await db.query('meals');
+    await db.delete('entries', where: 'id = ?', whereArgs: [entryId]);
   }
 
-  Future<List<int>> getFoodItemsForMeal(int mealId) async {
+  Future<List<Map<String, dynamic>>> getEntries() async {
+    final db = await database;
+    return await db.query('entries');
+  }
+
+  Future<List<int>> getFoodItemsForEntry(int entryId) async {
     final db = await database;
     final result =
-        await db.query('meals', where: 'id = ?', whereArgs: [mealId]);
+        await db.query('entries', where: 'id = ?', whereArgs: [entryId]);
     final foodItemIds =
         (result.isNotEmpty) ? result.first['food_item_ids'] : '';
     return (foodItemIds as String)
@@ -173,10 +178,10 @@ class FoodDatabase {
         'SELECT * FROM food_items WHERE id IN ($inClause)', foodItemIds);
   }
 
-  Future<Map<String, dynamic>> getMealRecordById(int mealId) async {
+  Future<Map<String, dynamic>> getEntryById(int entryId) async {
     final db = await database;
     final result =
-        await db.query('meals', where: 'id = ?', whereArgs: [mealId]);
+        await db.query('entries', where: 'id = ?', whereArgs: [entryId]);
 
     return result.isNotEmpty ? result.first : {};
   }

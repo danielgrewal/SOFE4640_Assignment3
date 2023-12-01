@@ -29,7 +29,7 @@ class _EditScreenState extends State<EditScreen> {
   Future<void> _loadMealRecord() async {
     final database = FoodDatabase.instance;
     final Map<String, dynamic> record =
-    await database.getMealRecordById(widget.mealRecordId);
+    await database.getEntryById(widget.mealRecordId);
 
     // Use the retrieved record to set initial values for controllers
     setState(() {
@@ -37,7 +37,7 @@ class _EditScreenState extends State<EditScreen> {
     });
 
     // Get the food items for the meal record
-    final List<int> foodItemIds = await database.getFoodItemsForMeal(widget.mealRecordId);
+    final List<int> foodItemIds = await database.getFoodItemsForEntry(widget.mealRecordId);
     final List<Map<String, dynamic>> foodItems =
     await database.getFoodItemsByIds(foodItemIds);
 

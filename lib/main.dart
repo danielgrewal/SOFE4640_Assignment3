@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_calories_calc_app/meal.dart';
+import 'package:flutter_calories_calc_app/entry.dart';
 import 'package:flutter_calories_calc_app/database.dart';
 import 'package:flutter_calories_calc_app/edit.dart';
 
@@ -24,7 +24,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late List<Map<String, dynamic>> mealRecords = [];
+  late List<Map<String, dynamic>> entries = [];
   DateTime? selectedFilterDate;
 
   @override
@@ -35,10 +35,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _loadMealRecords() async {
     final database = FoodDatabase.instance;
-    final List<Map<String, dynamic>> records = await database.getMealRecords();
+    final List<Map<String, dynamic>> records = await database.getEntries();
 
     setState(() {
-      mealRecords = records;
+      entries = records;
     });
   }
 
@@ -69,9 +69,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<Map<String, dynamic>> getFilteredRecords() {
     if (selectedFilterDate == null) {
-      return mealRecords;
+      return entries;
     } else {
-      return mealRecords
+      return entries
           .where((record) =>
               DateTime.parse(record['date'].toString())
                   .isAtSameMomentAs(selectedFilterDate!) ||
@@ -117,7 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           SizedBox(height: 20),
           Text(
-            'Saved Meal Records',
+            'Saved Entries',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 10),
@@ -132,8 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     DataColumn(label: Text('Food Items')),
                     DataColumn(label: Text('Total Calories')),
                     DataColumn(
-                        label:
-                            Text('Edit')), // New column for the "Edit" button
+                        label: Text('Actions')), // Rename column to "Actions"
                   ],
                   rows: getFilteredRecords().map<DataRow>((record) {
                     return DataRow(
@@ -163,20 +162,65 @@ class _MyHomePageState extends State<MyHomePage> {
                           Text(record['total_calories'].toString()),
                         ),
                         DataCell(
-                          ElevatedButton(
-                            onPressed: () async {
-                              // Navigate to the EditScreen when the "Edit" button is pressed
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      EditScreen(mealRecordId: record['id']),
-                                ),
-                              );
-                              // Refresh meal records after returning from EditScreen
-                              await _refresh();
-                            },
-                            child: Text('Edit'),
+                          Row(
+                            children: [
+                              ElevatedButton(
+                                onPressed: () async {
+                                  // Navigate to the EditScreen when the "Edit" button is pressed
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EditScreen(
+                                          mealRecordId: record['id']),
+                                    ),
+                                  );
+                                  // Refresh meal records after returning from EditScreen
+                                  await _refresh();
+                                },
+                                child: Text('Edit'),
+                              ),
+                              SizedBox(width: 8),
+                              // ElevatedButton(
+                              //   onPressed: () {
+                              //     // Add your delete logic here
+                              //     // You can show a confirmation dialog and delete the record on confirmation
+                              //   },
+                              ElevatedButton(
+                                onPressed: () async {
+                                  // Show a confirmation dialog
+                                  bool confirmDelete = await showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: Text('Delete Entry'),
+                                      content: Text(
+                                          'Are you sure you want to delete this entry?'),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop(false);
+                                          },
+                                          child: Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop(true);
+                                          },
+                                          child: Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  // If the user confirms, delete the entry
+                                  if (confirmDelete == true) {
+                                    await FoodDatabase.instance
+                                        .deleteEntry(record['id']);
+                                    await _refresh();
+                                  }
+                                },
+                                child: Text('Delete'),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -197,7 +241,7 @@ class _MyHomePageState extends State<MyHomePage> {
               // Refresh meal records after returning from MealScreen
               await _refresh();
             },
-            child: Text('Add A New Meal'),
+            child: Text('Add New Entry'),
           ),
         ],
       ),
@@ -206,7 +250,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<List<String>> _getFoodItemsForMeal(int mealId) async {
     final database = FoodDatabase.instance;
-    final List<int> foodItemIds = await database.getFoodItemsForMeal(mealId);
+    final List<int> foodItemIds = await database.getFoodItemsForEntry(mealId);
     final List<Map<String, dynamic>> foodItems =
         await database.getFoodItemsByIds(foodItemIds);
 

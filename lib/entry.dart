@@ -11,6 +11,7 @@ class _MealScreenState extends State<MealScreen> {
   List<Map<String, dynamic>> foodItems = [];
   List<FoodEntry> foodEntries = [];
   int? selectedFoodItemId;
+  int? selectedDropdownItemId;
   TextEditingController searchController = TextEditingController();
   int targetDailyCalories = 2000; // Set your default value
   DateTime? selectedDate; // Make selectedDate nullable
@@ -59,23 +60,33 @@ class _MealScreenState extends State<MealScreen> {
     }
   }
 
-  void _addRow() async {
-    if (selectedFoodItemId == null) {
+  void _addRow() {
+    if (selectedFoodItemId == null && selectedDropdownItemId == null) {
       return; // Don't add a row if no food item is selected
     }
 
+    int selectedItemId = selectedFoodItemId ?? selectedDropdownItemId!;
+
     // Fetch calorie count for the selected food item
     final selectedFoodItem =
-        foodItems.firstWhere((item) => item['id'] == selectedFoodItemId);
+        foodItems.firstWhere((item) => item['id'] == selectedItemId);
     final int calories = selectedFoodItem['calories'] as int;
 
     setState(() {
       // Add a new entry to the table with the selected food item and its calorie count
       foodEntries
-          .add(FoodEntry(foodItemId: selectedFoodItemId!, calories: calories));
-      // Clear the search field and selected item after adding a row
+          .add(FoodEntry(foodItemId: selectedItemId, calories: calories));
+      // Clear the search field and selected items after adding a row
       searchController.clear();
       selectedFoodItemId = null;
+      selectedDropdownItemId = null;
+    });
+  }
+
+  // Add a method to delete a row
+  void _deleteRow(FoodEntry entry) {
+    setState(() {
+      foodEntries.remove(entry);
     });
   }
 
@@ -91,11 +102,22 @@ class _MealScreenState extends State<MealScreen> {
       return;
     }
 
+    if (targetDailyCalories <= 0) {
+      // Show an error message if target daily calories is not entered or invalid
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter a valid target daily calories value.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (foodEntries.isEmpty) {
       // Show an error message if no food items are added to the meal
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Cannot save a meal with no food items.'),
+          content: Text('Cannot save entry with no food items.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -106,7 +128,7 @@ class _MealScreenState extends State<MealScreen> {
       // Show an error message if the total calories exceed the target
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Total meal calories cannot exceed the daily target.'),
+          content: Text('Total calories cannot exceed the daily target.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -127,7 +149,7 @@ class _MealScreenState extends State<MealScreen> {
     final foodItemIds = foodEntries.map((entry) => entry.foodItemId).toList();
 
     // Insert the meal into the database
-    await database.insertMeal(totalCalories, formattedDate, foodItemIds);
+    await database.insertEntry(totalCalories, formattedDate, foodItemIds);
 
     // Clear the food entries list
     setState(() {
@@ -137,7 +159,7 @@ class _MealScreenState extends State<MealScreen> {
     // Display a success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Meal saved to the database!'),
+        content: Text('Entry saved!'),
         backgroundColor: Colors.green,
       ),
     );
@@ -150,7 +172,7 @@ class _MealScreenState extends State<MealScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Save Meal To Database'),
+        title: Text('New Entry'),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -208,6 +230,8 @@ class _MealScreenState extends State<MealScreen> {
                 itemSubmitted: (item) {
                   setState(() {
                     selectedFoodItemId = item['id'] as int;
+                    // Automatically add the selected item to the foodEntries table
+                    _addRow();
                   });
                 },
                 itemBuilder: (context, item) {
@@ -221,21 +245,45 @@ class _MealScreenState extends State<MealScreen> {
               ),
             ),
             SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: DropdownButtonFormField<int>(
+                value: selectedDropdownItemId,
+                onChanged: (value) {
+                  setState(() {
+                    selectedDropdownItemId = value;
+                  });
+                },
+                items: foodItems.map<DropdownMenuItem<int>>((item) {
+                  return DropdownMenuItem<int>(
+                    value: item['id'] as int,
+                    child: Text(item['name'] as String),
+                  );
+                }).toList(),
+                decoration: InputDecoration(
+                  labelText: 'Select Food Item from Dropdown',
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 // Add a new row when the button is pressed
                 _addRow();
               },
-              child: Text('Add Food Item To Meal'),
+              child: Text('Add Food Item'),
             ),
             SizedBox(height: 20),
             foodEntries.isEmpty
                 ? Text(
-                    'No Food Items Added To This Meal') // Display "Empty" when there are no rows
+                    'No Food Items Added') // Display "Empty" when there are no rows
                 : DataTable(
                     columns: [
                       DataColumn(label: Text('Food Item')),
                       DataColumn(label: Text('Calories')),
+                      DataColumn(
+                          label:
+                              Text('Actions')), // New column for delete buttons
                     ],
                     rows: foodEntries.map<DataRow>((FoodEntry entry) {
                       return DataRow(
@@ -251,6 +299,15 @@ class _MealScreenState extends State<MealScreen> {
                           DataCell(
                             Text(
                               entry.calories.toString(),
+                            ),
+                          ),
+                          DataCell(
+                            IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () {
+                                // Call a method to delete the corresponding row
+                                _deleteRow(entry);
+                              },
                             ),
                           ),
                         ],
@@ -273,7 +330,7 @@ class _MealScreenState extends State<MealScreen> {
                 // Save the meal to the database when the button is pressed
                 _saveMealToDatabase();
               },
-              child: Text('Save Meal To Database'),
+              child: Text('Save Entry'),
             ),
           ],
         ),
