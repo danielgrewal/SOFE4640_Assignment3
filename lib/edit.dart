@@ -3,31 +3,34 @@ import 'package:flutter_calories_calc_app/database.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 import 'package:intl/intl.dart';
 
-class EditScreen extends StatefulWidget {
-  final int mealRecordId;
+class UpdateScreen extends StatefulWidget {
+  final int entryId;
 
-  EditScreen({required this.mealRecordId});
+  UpdateScreen({required this.entryId});
 
   @override
-  _EditScreenState createState() => _EditScreenState();
+  _UpdateScreenState createState() => _UpdateScreenState();
 }
 
-class _EditScreenState extends State<EditScreen> {
+class _UpdateScreenState extends State<UpdateScreen> {
   List<Map<String, dynamic>> foodItems = [];
   List<FoodEntry> foodEntries = [];
   int? selectedFoodItemId;
   int? selectedDropdownItemId;
   TextEditingController searchController = TextEditingController();
-  int targetDailyCalories = 2000; // Set your default value
-  DateTime? selectedDate; // Make selectedDate nullable
+  int targetDailyCalories = 0;
+  DateTime? selectedDate;
 
   int calculateTotalCalories() {
     return foodEntries.fold(0, (sum, entry) => sum + entry.calories);
   }
 
+  late TextEditingController targetCaloriesController;
+
   @override
   void initState() {
     super.initState();
+    targetCaloriesController = TextEditingController();
     _loadFoodItems();
   }
 
@@ -47,7 +50,7 @@ class _EditScreenState extends State<EditScreen> {
 
   Future<void> _loadExistingEntry() async {
     final database = FoodDatabase.instance;
-    final entry = await database.getEntryById(widget.mealRecordId);
+    final entry = await database.getEntryById(widget.entryId);
 
     if (entry.isNotEmpty) {
       setState(() {
@@ -184,7 +187,7 @@ class _EditScreenState extends State<EditScreen> {
 
     // Update the existing meal entry in the database using the new updateEntry method
     await database.updateEntry(
-      widget.mealRecordId,
+      widget.entryId,
       totalCalories,
       formattedDate,
       foodItemIds,
@@ -215,6 +218,7 @@ class _EditScreenState extends State<EditScreen> {
               padding: const EdgeInsets.all(8.0),
               child: TextFormField(
                 keyboardType: TextInputType.number,
+                controller: targetCaloriesController,
                 decoration: InputDecoration(
                   labelText: 'Target Daily Calories',
                 ),
@@ -222,6 +226,12 @@ class _EditScreenState extends State<EditScreen> {
                   setState(() {
                     targetDailyCalories = int.tryParse(value) ?? 0;
                   });
+                },
+                validator: (value) {
+                  if (targetDailyCalories <= 0) {
+                    return 'Please enter a valid target daily calories value.';
+                  }
+                  return null; // Return null to indicate no error
                 },
               ),
             ),

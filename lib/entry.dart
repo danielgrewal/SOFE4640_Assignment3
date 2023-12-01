@@ -14,16 +14,19 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
   int? selectedFoodItemId;
   int? selectedDropdownItemId;
   TextEditingController searchController = TextEditingController();
-  int targetDailyCalories = 2000; // Set your default value
-  DateTime? selectedDate; // Make selectedDate nullable
+  int targetDailyCalories = 0;
+  DateTime? selectedDate;
 
   int calculateTotalCalories() {
     return foodEntries.fold(0, (sum, entry) => sum + entry.calories);
   }
 
+  late TextEditingController targetCaloriesController;
+
   @override
   void initState() {
     super.initState();
+    targetCaloriesController = TextEditingController();
     _loadFoodItems();
   }
 
@@ -185,6 +188,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
               padding: const EdgeInsets.all(8.0),
               child: TextFormField(
                 keyboardType: TextInputType.number,
+                controller: targetCaloriesController,
                 decoration: InputDecoration(
                   labelText: 'Target Daily Calories',
                 ),
@@ -192,6 +196,12 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
                   setState(() {
                     targetDailyCalories = int.tryParse(value) ?? 0;
                   });
+                },
+                validator: (value) {
+                  if (targetDailyCalories <= 0) {
+                    return 'Please enter a valid target daily calories value.';
+                  }
+                  return null; // Return null to indicate no error
                 },
               ),
             ),

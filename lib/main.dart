@@ -126,107 +126,112 @@ class _MyHomePageState extends State<MyHomePage> {
               onRefresh: _refresh,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columns: [
-                    DataColumn(label: Text('Date')),
-                    DataColumn(label: Text('Food Items')),
-                    DataColumn(label: Text('Total Calories')),
-                    DataColumn(
-                        label: Text('Actions')), // Rename column to "Actions"
-                  ],
-                  rows: getFilteredRecords().map<DataRow>((record) {
-                    return DataRow(
-                      cells: [
-                        DataCell(
-                          Text(DateFormat('yyyy-MM-dd').format(
-                            DateTime.parse(record['date'].toString()),
-                          )),
+                child: entries.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No entries found',
+                          style: TextStyle(fontSize: 16),
                         ),
-                        DataCell(
-                          FutureBuilder<List<String>>(
-                            future: _getFoodItemsForMeal(record['id']),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return CircularProgressIndicator();
-                              } else if (snapshot.hasError) {
-                                return Text('Error loading food items');
-                              } else {
-                                final foodItems = snapshot.data ?? [];
-                                return Text(foodItems.join(', '));
-                              }
-                            },
-                          ),
-                        ),
-                        DataCell(
-                          Text(record['total_calories'].toString()),
-                        ),
-                        DataCell(
-                          Row(
-                            children: [
-                              ElevatedButton(
-                                onPressed: () async {
-                                  // Navigate to the EditScreen when the "Edit" button is pressed
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EditScreen(
-                                          mealRecordId: record['id']),
-                                    ),
-                                  );
-                                  // Refresh meal records after returning from EditScreen
-                                  await _refresh();
-                                },
-                                child: Text('Edit'),
+                      )
+                    : DataTable(
+                        columns: [
+                          DataColumn(label: Text('Date')),
+                          DataColumn(label: Text('Food Items')),
+                          DataColumn(label: Text('Total Calories')),
+                          DataColumn(
+                              label: Text(
+                                  'Actions')), // Rename column to "Actions"
+                        ],
+                        rows: getFilteredRecords().map<DataRow>((record) {
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                Text(DateFormat('yyyy-MM-dd').format(
+                                  DateTime.parse(record['date'].toString()),
+                                )),
                               ),
-                              SizedBox(width: 8),
-                              // ElevatedButton(
-                              //   onPressed: () {
-                              //     // Add your delete logic here
-                              //     // You can show a confirmation dialog and delete the record on confirmation
-                              //   },
-                              ElevatedButton(
-                                onPressed: () async {
-                                  // Show a confirmation dialog
-                                  bool confirmDelete = await showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text('Delete Entry'),
-                                      content: Text(
-                                          'Are you sure you want to delete this entry?'),
-                                      actions: <Widget>[
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop(false);
-                                          },
-                                          child: Text('Cancel'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop(true);
-                                          },
-                                          child: Text('Delete'),
-                                        ),
-                                      ],
+                              DataCell(
+                                FutureBuilder<List<String>>(
+                                  future: _getFoodItemsForMeal(record['id']),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return CircularProgressIndicator();
+                                    } else if (snapshot.hasError) {
+                                      return Text('Error loading food items');
+                                    } else {
+                                      final foodItems = snapshot.data ?? [];
+                                      return Text(foodItems.join(', '));
+                                    }
+                                  },
+                                ),
+                              ),
+                              DataCell(
+                                Text(record['total_calories'].toString()),
+                              ),
+                              DataCell(
+                                Row(
+                                  children: [
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        // Navigate to the EditScreen when the "Edit" button is pressed
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => UpdateScreen(
+                                                entryId: record['id']),
+                                          ),
+                                        );
+                                        // Refresh meal records after returning from EditScreen
+                                        await _refresh();
+                                      },
+                                      child: Text('Edit'),
                                     ),
-                                  );
+                                    SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        // Show a confirmation dialog
+                                        bool confirmDelete = await showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text('Delete Entry'),
+                                            content: Text(
+                                                'Are you sure you want to delete this entry?'),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context)
+                                                      .pop(false);
+                                                },
+                                                child: Text('Cancel'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context)
+                                                      .pop(true);
+                                                },
+                                                child: Text('Delete'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
 
-                                  // If the user confirms, delete the entry
-                                  if (confirmDelete == true) {
-                                    await FoodDatabase.instance
-                                        .deleteEntry(record['id']);
-                                    await _refresh();
-                                  }
-                                },
-                                child: Text('Delete'),
+                                        // If the user confirms, delete the entry
+                                        if (confirmDelete == true) {
+                                          await FoodDatabase.instance
+                                              .deleteEntry(record['id']);
+                                          await _refresh();
+                                        }
+                                      },
+                                      child: Text('Delete'),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
+                          );
+                        }).toList(),
+                      ),
               ),
             ),
           ),
