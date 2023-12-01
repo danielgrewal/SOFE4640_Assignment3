@@ -3,20 +3,25 @@ import 'package:flutter_calories_calc_app/database.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 import 'package:intl/intl.dart';
 
+// Stateful widget for new entry page
 class NewEntryScreen extends StatefulWidget {
   @override
   _NewEntryScreenState createState() => _NewEntryScreenState();
 }
 
 class _NewEntryScreenState extends State<NewEntryScreen> {
+  // Lists for food items and database entries
   List<Map<String, dynamic>> foodItems = [];
   List<FoodEntry> foodEntries = [];
+
+  // Variables for user input
   int? selectedFoodItemId;
   int? selectedDropdownItemId;
   TextEditingController searchController = TextEditingController();
   int targetDailyCalories = 0;
   DateTime? selectedDate;
 
+  // Calculates the total calories for selected food items
   int calculateTotalCalories() {
     return foodEntries.fold(0, (sum, entry) => sum + entry.calories);
   }
@@ -30,6 +35,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     _loadFoodItems();
   }
 
+  // Load the food items into the page from the database for selection
   Future<void> _loadFoodItems() async {
     final database = FoodDatabase.instance;
     final db = await database.database;
@@ -41,6 +47,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     });
   }
 
+  // DatePicker widget for selecting the date of the entry
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -56,6 +63,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     }
   }
 
+  // Format user input for data from the picker before going into the database
   String _formatDate(DateTime? date) {
     if (date == null) {
       return 'No Date Selected';
@@ -64,6 +72,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     }
   }
 
+  // Add selected food item into the DataTable view on new entry page
   void _addRow() {
     if (selectedFoodItemId == null && selectedDropdownItemId == null) {
       return;
@@ -84,12 +93,14 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     });
   }
 
+  // Delete food item from the DataTable
   void _deleteRow(FoodEntry entry) {
     setState(() {
       foodEntries.remove(entry);
     });
   }
 
+  // Save entry to the database, with error checking conditions
   void _saveEntryToDatabase() async {
     if (selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,8 +148,6 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
     final totalCalories = calculateTotalCalories();
     final formattedDate =
         "${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}";
-
-    print('Formatted Date: $formattedDate');
 
     final foodItemIds = foodEntries.map((entry) => entry.foodItemId).toList();
 
@@ -305,7 +314,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
                   ),
             SizedBox(height: 20),
             Text(
-              'Total Meal Calories: ${calculateTotalCalories()}',
+              'Total Daily Calories: ${calculateTotalCalories()}',
               style: TextStyle(
                 fontSize: 16,
                 color: calculateTotalCalories() > targetDailyCalories
@@ -327,6 +336,7 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
   }
 }
 
+// Food Entry object class
 class FoodEntry {
   final int foodItemId;
   final int calories;

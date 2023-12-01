@@ -4,10 +4,12 @@ import 'package:flutter_calories_calc_app/entry.dart';
 import 'package:flutter_calories_calc_app/database.dart';
 import 'package:flutter_calories_calc_app/edit.dart';
 
+// Entry point for the app
 void main() {
   runApp(MyApp());
 }
 
+// Root widget for the app
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -18,11 +20,13 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// Main screen of the app
 class MyHomePage extends StatefulWidget {
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
+// State of the main screen
 class _MyHomePageState extends State<MyHomePage> {
   late List<Map<String, dynamic>> entries = [];
   DateTime? selectedFilterDate;
@@ -33,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadEntries();
   }
 
+  // Load saved entries from the database to populate the DataTable widget
   Future<void> _loadEntries() async {
     final database = FoodDatabase.instance;
     final List<Map<String, dynamic>> records = await database.getEntries();
@@ -42,10 +47,12 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  // Refresh the page to show loaded entries
   Future<void> _refresh() async {
     await _loadEntries();
   }
 
+  // Opens the DatePicker widget to allow user to select a date
   Future<void> _filterByDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -61,12 +68,14 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // Clear the date filter query
   void _clearFilter() {
     setState(() {
       selectedFilterDate = null;
     });
   }
 
+  // Get a list of entries based on the date query filter
   List<Map<String, dynamic>> getFilteredRecords() {
     if (selectedFilterDate == null) {
       return entries;
@@ -245,6 +254,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  // Get the food items for the entry in the database to display in DataTable
   Future<List<String>> _getFoodItemsForEntry(int entryId) async {
     final database = FoodDatabase.instance;
     final List<int> foodItemIds = await database.getFoodItemsForEntry(entryId);

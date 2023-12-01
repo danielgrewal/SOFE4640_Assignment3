@@ -1,7 +1,9 @@
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 
+// Class for representing database and managing entry data
 class FoodDatabase {
+  // Init database and get instance
   static final FoodDatabase instance = FoodDatabase._init();
 
   static Database? _database;
@@ -28,6 +30,7 @@ class FoodDatabase {
     return db;
   }
 
+  // Create tables for food items and entries once database is first created
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
       CREATE TABLE food_items(
@@ -50,6 +53,7 @@ class FoodDatabase {
     await _insertInitialFoodItems(db);
   }
 
+  // Insert seed data for the food items user can select
   Future<void> _insertInitialFoodItems(Database db) async {
     final foodItems = [
       {'name': 'Chicken Breast', 'calories': 165},
@@ -103,6 +107,7 @@ class FoodDatabase {
     }
   }
 
+  // Insert food item seed data into the food items table
   Future<void> insertFoodItem(String name, int calories) async {
     final db = await database;
 
@@ -126,6 +131,7 @@ class FoodDatabase {
     }
   }
 
+  // Insert new daily calories entry into the database
   Future<int> _insertEntry(Map<String, dynamic> entry) async {
     final db = await database;
 
@@ -151,11 +157,13 @@ class FoodDatabase {
     await _insertEntry(entry);
   }
 
+  // Delete an entry from the database
   Future<void> deleteEntry(int entryId) async {
     final db = await database;
     await db.delete('entries', where: 'id = ?', whereArgs: [entryId]);
   }
 
+  // Update an existing entry in the database
   Future<void> updateEntry(
     int entryId,
     int totalCalories,
@@ -180,17 +188,20 @@ class FoodDatabase {
     );
   }
 
+  // Format the date object string for the database
   Future<String> _formatDateForDatabase(DateTime date) async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
 
     return formattedDate;
   }
 
+  // Get all entries in the database
   Future<List<Map<String, dynamic>>> getEntries() async {
     final db = await database;
     return await db.query('entries');
   }
 
+  // Get all the food items for populating the user selection lists
   Future<List<int>> getFoodItemsForEntry(int entryId) async {
     final db = await database;
     final result =
@@ -203,6 +214,7 @@ class FoodDatabase {
         .toList();
   }
 
+  // Get a food item name by its id
   Future<List<Map<String, dynamic>>> getFoodItemsByIds(
       List<int> foodItemIds) async {
     final db = await database;
@@ -211,6 +223,7 @@ class FoodDatabase {
         'SELECT * FROM food_items WHERE id IN ($inClause)', foodItemIds);
   }
 
+  // Get a daily calories entry by its id
   Future<Map<String, dynamic>> getEntryById(int entryId) async {
     final db = await database;
     final result =
@@ -219,6 +232,7 @@ class FoodDatabase {
     return result.isNotEmpty ? result.first : {};
   }
 
+  // Format the string for dates
   String _formatDate(String rawDate) {
     final dateComponents = rawDate.split("-");
     final year = dateComponents[0];

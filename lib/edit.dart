@@ -3,15 +3,19 @@ import 'package:flutter_calories_calc_app/database.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
 import 'package:intl/intl.dart';
 
+// Stateful widget for edit entry page
 class UpdateScreen extends StatefulWidget {
   final int entryId;
 
+  // Constructor to get the entryId to retreive data from DB
   UpdateScreen({required this.entryId});
 
   @override
   _UpdateScreenState createState() => _UpdateScreenState();
 }
 
+// This class has all the same methods and functionality as the New Entry class
+// Refer to entry.dart for all comments
 class _UpdateScreenState extends State<UpdateScreen> {
   List<Map<String, dynamic>> foodItems = [];
   List<FoodEntry> foodEntries = [];
@@ -357,6 +361,7 @@ class _UpdateScreenState extends State<UpdateScreen> {
   }
 }
 
+// Food Entry object class
 class FoodEntry {
   final int foodItemId;
   final int calories;
