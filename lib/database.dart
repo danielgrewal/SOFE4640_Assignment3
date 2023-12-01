@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 
 class FoodDatabase {
@@ -132,7 +133,16 @@ class FoodDatabase {
 
   Future<int> _insertEntry(Map<String, dynamic> entry) async {
     final db = await database;
-    return await db.insert('entries', entry);
+
+    final formattedDate = _formatDate(entry['date']);
+
+    // Replace the date in the entry map with the formatted date
+    final updatedEntry = Map<String, dynamic>.from(entry);
+    updatedEntry['date'] = formattedDate;
+
+    print('Inserting entry: $updatedEntry');
+
+    return await db.insert('entries', updatedEntry);
   }
 
   Future<void> insertEntry(
@@ -151,6 +161,40 @@ class FoodDatabase {
   Future<void> deleteEntry(int entryId) async {
     final db = await database;
     await db.delete('entries', where: 'id = ?', whereArgs: [entryId]);
+  }
+
+  Future<void> updateEntry(
+    int entryId,
+    int totalCalories,
+    String date,
+    List<int> foodItemIds,
+  ) async {
+    final db = await database;
+
+    // Format the date
+    final formattedDate = _formatDate(date);
+
+    // Prepare the data for update
+    final updatedEntry = {
+      'total_calories': totalCalories,
+      'date': formattedDate,
+      'food_item_ids': foodItemIds.join(','),
+    };
+
+    // Perform the update
+    await db.update(
+      'entries',
+      updatedEntry,
+      where: 'id = ?',
+      whereArgs: [entryId],
+    );
+  }
+
+  Future<String> _formatDateForDatabase(DateTime date) async {
+    final formattedDate =
+        DateFormat('yyyy-MM-dd').format(date); // Using the intl package
+
+    return formattedDate;
   }
 
   Future<List<Map<String, dynamic>>> getEntries() async {
@@ -184,5 +228,14 @@ class FoodDatabase {
         await db.query('entries', where: 'id = ?', whereArgs: [entryId]);
 
     return result.isNotEmpty ? result.first : {};
+  }
+
+  String _formatDate(String rawDate) {
+    // Extract the date and format it correctly with leading zeros
+    final dateComponents = rawDate.split("-");
+    final year = dateComponents[0];
+    final month = dateComponents[1].padLeft(2, '0');
+    final day = dateComponents[2].padLeft(2, '0');
+    return '$year-$month-$day';
   }
 }

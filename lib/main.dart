@@ -236,7 +236,7 @@ class _MyHomePageState extends State<MyHomePage> {
               // Navigate to the MealScreen when the button is pressed
               await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => MealScreen()),
+                MaterialPageRoute(builder: (context) => NewEntryScreen()),
               );
               // Refresh meal records after returning from MealScreen
               await _refresh();

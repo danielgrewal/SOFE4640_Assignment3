@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_calories_calc_app/database.dart';
 import 'package:autocomplete_textfield/autocomplete_textfield.dart';
+import 'package:intl/intl.dart';
 
-class MealScreen extends StatefulWidget {
+class NewEntryScreen extends StatefulWidget {
   @override
-  _MealScreenState createState() => _MealScreenState();
+  _NewEntryScreenState createState() => _NewEntryScreenState();
 }
 
-class _MealScreenState extends State<MealScreen> {
+class _NewEntryScreenState extends State<NewEntryScreen> {
   List<Map<String, dynamic>> foodItems = [];
   List<FoodEntry> foodEntries = [];
   int? selectedFoodItemId;
@@ -56,7 +57,8 @@ class _MealScreenState extends State<MealScreen> {
     if (date == null) {
       return 'No Date Selected';
     } else {
-      return 'Selected Date: ${date.year}-${date.month}-${date.day}';
+      // Use DateFormat from the intl package to format the date
+      return 'Selected Date: ${DateFormat('yyyy-MM-dd').format(date)}';
     }
   }
 
@@ -90,7 +92,7 @@ class _MealScreenState extends State<MealScreen> {
     });
   }
 
-  void _saveMealToDatabase() async {
+  void _saveEntryToDatabase() async {
     if (selectedDate == null) {
       // Show an error message if no date is selected
       ScaffoldMessenger.of(context).showSnackBar(
@@ -144,6 +146,8 @@ class _MealScreenState extends State<MealScreen> {
     // Format the selected date only if it's not null
     final formattedDate =
         "${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}";
+
+    print('Formatted Date: $formattedDate'); // Add this line for debugging
 
     // Get the list of food item IDs for the meal
     final foodItemIds = foodEntries.map((entry) => entry.foodItemId).toList();
@@ -328,7 +332,7 @@ class _MealScreenState extends State<MealScreen> {
             ElevatedButton(
               onPressed: () {
                 // Save the meal to the database when the button is pressed
-                _saveMealToDatabase();
+                _saveEntryToDatabase();
               },
               child: Text('Save Entry'),
             ),
