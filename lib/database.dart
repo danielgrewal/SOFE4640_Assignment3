@@ -47,12 +47,10 @@ class FoodDatabase {
       )
     ''');
 
-    // Insert initial food items after creating the tables
     await _insertInitialFoodItems(db);
   }
 
   Future<void> _insertInitialFoodItems(Database db) async {
-    // Insert 40 common food items with their approximate calories
     final foodItems = [
       {'name': 'Chicken Breast', 'calories': 165},
       {'name': 'Broccoli', 'calories': 55},
@@ -108,7 +106,6 @@ class FoodDatabase {
   Future<void> insertFoodItem(String name, int calories) async {
     final db = await database;
 
-    // Check if a food item with the same name already exists
     final existingItems = await db.query(
       'food_items',
       where: 'name = ?',
@@ -116,10 +113,8 @@ class FoodDatabase {
     );
 
     if (existingItems.isNotEmpty) {
-      // Handle the case where the food item already exists (e.g., show an error message)
       print('Food item with the name "$name" already exists.');
     } else {
-      // Insert the new food item if it doesn't already exist
       await db.insert(
         'food_items',
         {
@@ -135,8 +130,6 @@ class FoodDatabase {
     final db = await database;
 
     final formattedDate = _formatDate(entry['date']);
-
-    // Replace the date in the entry map with the formatted date
     final updatedEntry = Map<String, dynamic>.from(entry);
     updatedEntry['date'] = formattedDate;
 
@@ -171,17 +164,14 @@ class FoodDatabase {
   ) async {
     final db = await database;
 
-    // Format the date
     final formattedDate = _formatDate(date);
 
-    // Prepare the data for update
     final updatedEntry = {
       'total_calories': totalCalories,
       'date': formattedDate,
       'food_item_ids': foodItemIds.join(','),
     };
 
-    // Perform the update
     await db.update(
       'entries',
       updatedEntry,
@@ -191,8 +181,7 @@ class FoodDatabase {
   }
 
   Future<String> _formatDateForDatabase(DateTime date) async {
-    final formattedDate =
-        DateFormat('yyyy-MM-dd').format(date); // Using the intl package
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
 
     return formattedDate;
   }
@@ -231,7 +220,6 @@ class FoodDatabase {
   }
 
   String _formatDate(String rawDate) {
-    // Extract the date and format it correctly with leading zeros
     final dateComponents = rawDate.split("-");
     final year = dateComponents[0];
     final month = dateComponents[1].padLeft(2, '0');

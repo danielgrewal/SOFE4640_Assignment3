@@ -30,10 +30,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _loadMealRecords();
+    _loadEntries();
   }
 
-  Future<void> _loadMealRecords() async {
+  Future<void> _loadEntries() async {
     final database = FoodDatabase.instance;
     final List<Map<String, dynamic>> records = await database.getEntries();
 
@@ -43,7 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _refresh() async {
-    await _loadMealRecords();
+    await _loadEntries();
   }
 
   Future<void> _filterByDate() async {
@@ -138,9 +138,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           DataColumn(label: Text('Date')),
                           DataColumn(label: Text('Food Items')),
                           DataColumn(label: Text('Total Calories')),
-                          DataColumn(
-                              label: Text(
-                                  'Actions')), // Rename column to "Actions"
+                          DataColumn(label: Text('Actions')),
                         ],
                         rows: getFilteredRecords().map<DataRow>((record) {
                           return DataRow(
@@ -152,7 +150,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                               DataCell(
                                 FutureBuilder<List<String>>(
-                                  future: _getFoodItemsForMeal(record['id']),
+                                  future: _getFoodItemsForEntry(record['id']),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState ==
                                         ConnectionState.waiting) {
@@ -174,7 +172,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                   children: [
                                     ElevatedButton(
                                       onPressed: () async {
-                                        // Navigate to the EditScreen when the "Edit" button is pressed
                                         await Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -182,7 +179,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 entryId: record['id']),
                                           ),
                                         );
-                                        // Refresh meal records after returning from EditScreen
                                         await _refresh();
                                       },
                                       child: Text('Edit'),
@@ -190,7 +186,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                     SizedBox(width: 8),
                                     ElevatedButton(
                                       onPressed: () async {
-                                        // Show a confirmation dialog
                                         bool confirmDelete = await showDialog(
                                           context: context,
                                           builder: (context) => AlertDialog(
@@ -216,7 +211,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                           ),
                                         );
 
-                                        // If the user confirms, delete the entry
                                         if (confirmDelete == true) {
                                           await FoodDatabase.instance
                                               .deleteEntry(record['id']);
@@ -238,12 +232,10 @@ class _MyHomePageState extends State<MyHomePage> {
           SizedBox(height: 20),
           ElevatedButton(
             onPressed: () async {
-              // Navigate to the MealScreen when the button is pressed
               await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => NewEntryScreen()),
               );
-              // Refresh meal records after returning from MealScreen
               await _refresh();
             },
             child: Text('Add New Entry'),
@@ -253,9 +245,9 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Future<List<String>> _getFoodItemsForMeal(int mealId) async {
+  Future<List<String>> _getFoodItemsForEntry(int entryId) async {
     final database = FoodDatabase.instance;
-    final List<int> foodItemIds = await database.getFoodItemsForEntry(mealId);
+    final List<int> foodItemIds = await database.getFoodItemsForEntry(entryId);
     final List<Map<String, dynamic>> foodItems =
         await database.getFoodItemsByIds(foodItemIds);
 
